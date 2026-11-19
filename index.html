@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Bone Crypt</title>
+<script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>
+<style>
+  :root { --bone: #efe6cf; --muted: #a99cc0; --purple: #9b6bff; --red: #ff4d5e; --gold: #ffcc4d; --green: #66e08a; --panel: rgba(20, 14, 34, .92); --line: #4a3a6e; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0e0b18; color: var(--bone);
+    font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; }
+  canvas#c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .hidden { display: none !important; }
+
+  /* screens */
+  .screen { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; text-align: center; }
+  .dim { background: rgba(8, 5, 16, .62); }
+  .panel { background: var(--panel); border: 2px solid var(--line); border-radius: 16px; padding: 20px 18px; width: min(560px, 100%); max-height: 100%; overflow: auto;
+    display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+  h1 { font-size: clamp(42px, 9vw, 86px); line-height: .9; letter-spacing: 2px; color: var(--bone); text-shadow: 0 4px 0 #3a2a5e, 0 0 30px rgba(155,107,255,.7); }
+  h1 em { display: block; font-style: normal; font-size: .38em; letter-spacing: 8px; color: var(--purple); text-shadow: 0 2px 0 #000; margin-top: 6px; }
+  h2 { font-size: 28px; letter-spacing: 1px; }
+  .sub { color: var(--muted); font-size: 15px; max-width: 460px; }
+  .btn { border: 0; border-radius: 12px; padding: 13px 28px; font-weight: 900; font-size: 20px; letter-spacing: 1px; background: linear-gradient(#b48aff, #7a4fe0); color: #fff;
+    box-shadow: 0 5px 0 #4b2c99, 0 8px 20px rgba(0,0,0,.4); transition: transform .08s; }
+  .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #4b2c99; }
+  .btn.gold { background: linear-gradient(#ffe08a, #f0a92a); color: #3a2400; box-shadow: 0 5px 0 #9a6410, 0 8px 20px rgba(0,0,0,.4); }
+  .btn.green { background: linear-gradient(#8ff0aa, #3cb96a); color: #062b14; box-shadow: 0 5px 0 #1f7a41, 0 8px 20px rgba(0,0,0,.4); }
+  .btn.dark { background: #2a2042; box-shadow: 0 4px 0 #120c20; font-size: 15px; padding: 10px 16px; }
+  .btn.small { font-size: 15px; padding: 10px 16px; }
+  .btn .ad { font-size: 11px; background: rgba(0,0,0,.3); border-radius: 5px; padding: 2px 5px; margin-left: 6px; vertical-align: middle; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .gold { color: var(--gold); }
+  .hint { color: var(--muted); font-size: 13px; }
+
+  /* loading */
+  #loading { background: #0e0b18; z-index: 30; }
+  #loadbar { width: min(320px, 70vw); height: 12px; border-radius: 6px; background: #241a3a; overflow: hidden; border: 2px solid var(--line); }
+  #loadfill { height: 100%; width: 0; background: linear-gradient(90deg, #7a4fe0, #c9a7ff); transition: width .15s; }
+
+  /* hero select */
+  #heroes { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .hcard { width: 150px; border: 2px solid var(--line); border-radius: 12px; background: rgba(42, 32, 66, .85); padding: 10px; text-align: left; }
+  .hcard.sel { border-color: var(--gold); box-shadow: 0 0 18px rgba(255, 204, 77, .35); }
+  .hcard .hn { font-weight: 900; font-size: 17px; }
+  .hcard .hd { color: var(--muted); font-size: 12px; margin-top: 3px; min-height: 30px; }
+  .hcard .hp { font-size: 13px; margin-top: 6px; font-weight: 700; }
+
+  /* HUD */
+  #hud { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
+  #topbar { position: absolute; left: 0; right: 0; top: 0; padding: max(10px, env(safe-area-inset-top)) 12px 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .bar { width: min(260px, 40vw); height: 18px; border-radius: 9px; background: rgba(0,0,0,.55); border: 2px solid #000; overflow: hidden; position: relative; }
+  .bar i { position: absolute; inset: 0; width: 100%; transform-origin: left; display: block; }
+  #hpfill { background: linear-gradient(#ff7a85, #d82c3e); }
+  #ultfill { background: linear-gradient(#d4b8ff, #8a5cff); }
+  #ultbar { height: 10px; margin-top: 5px; }
+  #ultbar.ready { box-shadow: 0 0 12px #b48aff; border-color: #d4b8ff; }
+  .bartext { position: absolute; inset: 0; font-size: 12px; font-weight: 900; line-height: 14px; text-align: center; text-shadow: 0 1px 2px #000; }
+  #wavebox { text-align: center; font-weight: 900; text-shadow: 0 2px 3px #000; }
+  #wavebox b { display: block; font-size: 22px; letter-spacing: 1px; }
+  #wavebox span { font-size: 13px; color: var(--muted); }
+  #rightbox { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 18px; text-shadow: 0 2px 3px #000; }
+  #pauseBtn { pointer-events: auto; width: 40px; height: 40px; border-radius: 10px; border: 2px solid #000; background: rgba(0,0,0,.5); display: grid; place-items: center; }
+  #bossbar { position: absolute; left: 50%; top: 74px; transform: translateX(-50%); width: min(420px, 80vw); text-align: center; }
+  #bossbar .bar { width: 100%; height: 14px; }
+  #bossfill { background: linear-gradient(#ffd27a, #e0552a); }
+  #bossname { font-weight: 900; font-size: 14px; letter-spacing: 3px; color: #ffd27a; text-shadow: 0 2px 3px #000; margin-bottom: 3px; }
+  #banner { position: fixed; left: 0; right: 0; top: 28%; text-align: center; z-index: 6; pointer-events: none; font-weight: 900; font-size: clamp(30px, 7vw, 58px);
+    letter-spacing: 3px; color: var(--bone); text-shadow: 0 4px 0 #3a2a5e, 0 0 24px rgba(155,107,255,.8); opacity: 0; transform: scale(.8); transition: opacity .25s, transform .25s; }
+  #banner.on { opacity: 1; transform: scale(1); }
+  #banner small { display: block; font-size: .4em; letter-spacing: 2px; color: var(--muted); margin-top: 6px; }
+  #vignette { position: fixed; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 120px 40px rgba(255, 30, 50, .65); opacity: 0; transition: opacity .25s; }
+  #nums { position: fixed; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
+  .num { position: absolute; left: 0; top: 0; font-weight: 900; font-size: 20px; color: #fff; text-shadow: 0 2px 0 #000, 0 0 6px #000; white-space: nowrap; will-change: transform; }
+  #toast { position: fixed; left: 50%; bottom: 22%; transform: translateX(-50%); z-index: 20; background: rgba(0,0,0,.75); border-radius: 10px; padding: 8px 14px; font-weight: 900;
+    opacity: 0; transition: opacity .2s; pointer-events: none; }
+  #toast.on { opacity: 1; }
+
+  /* touch controls */
+  #touch { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+  #joy { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 3px solid rgba(255,255,255,.25); background: rgba(0,0,0,.18); display: none; }
+  #joyknob { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: rgba(239,230,207,.55); }
+  .tbtn { position: absolute; pointer-events: auto; border-radius: 50%; border: 3px solid rgba(0,0,0,.6); display: grid; place-items: center; font-weight: 900; color: #fff;
+    text-shadow: 0 2px 2px #000; font-size: 13px; letter-spacing: 1px; }
+  .tbtn:active, .tbtn.down { filter: brightness(1.3); transform: scale(.95); }
+  #bAtk { width: 92px; height: 92px; right: max(22px, env(safe-area-inset-right)); bottom: max(26px, env(safe-area-inset-bottom)); background: radial-gradient(#ff8a7a, #c22f3f); font-size: 16px; }
+  #bDodge { width: 64px; height: 64px; right: calc(max(22px, env(safe-area-inset-right)) + 104px); bottom: max(22px, env(safe-area-inset-bottom)); background: radial-gradient(#9fd6ff, #2f7fc2); }
+  #bUlt { width: 64px; height: 64px; right: calc(max(22px, env(safe-area-inset-right)) + 14px); bottom: calc(max(26px, env(safe-area-inset-bottom)) + 104px); background: radial-gradient(#6b5a8a, #3a2f52); opacity: .6; }
+  #bUlt.ready { background: radial-gradient(#e2ccff, #8a5cff); opacity: 1; box-shadow: 0 0 20px #b48aff; }
+
+  /* upgrades */
+  #cards { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+  .card { display: flex; align-items: center; gap: 12px; text-align: left; border: 2px solid var(--line); border-radius: 12px; background: rgba(42, 32, 66, .9); padding: 12px 14px; }
+  .card:hover { border-color: var(--purple); }
+  .card .ic { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 10px; display: grid; place-items: center; font-size: 22px; font-weight: 900; background: #1a1230; border: 2px solid #000; }
+  .card .cn { font-weight: 900; font-size: 17px; }
+  .card .cd { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .card .lv { color: var(--gold); font-size: 12px; margin-left: 6px; }
+  /* world-anchored HUD */
+  .ehp { position: absolute; left: 0; top: 0; width: 46px; height: 7px; margin-left: -23px; border-radius: 4px; background: rgba(0,0,0,.7); border: 1px solid #000; overflow: hidden; will-change: transform; }
+  .ehp i { position: absolute; inset: 0; background: linear-gradient(#ff9090, #d63a3a); transform-origin: left; }
+  .ehp.rev i { background: linear-gradient(#e2ccff, #8a5cff); }
+  .smash { position: absolute; left: 0; top: 0; font-weight: 900; font-size: 15px; letter-spacing: 1px; color: #eadcff; text-shadow: 0 2px 0 #000, 0 0 10px #9b6bff; white-space: nowrap; will-change: transform; }
+  .smash span { display: inline-block; animation: bob .45s ease-in-out infinite alternate; }
+  .smash.urgent { color: #ffc0c8; text-shadow: 0 2px 0 #000, 0 0 10px #ff4d5e; }
+  .smash.urgent span { animation-duration: .2s; }
+  @keyframes bob { from { transform: translateY(0) scale(1); } to { transform: translateY(-6px) scale(1.1); } }
+  .oarrow { position: absolute; left: 0; top: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; clip-path: polygon(100% 50%, 0 0, 28% 50%, 0 100%); opacity: .85; will-change: transform; }
+  #streak { position: fixed; right: 5%; top: 46%; z-index: 6; pointer-events: none; text-align: right; font-weight: 900; font-size: clamp(24px, 4.5vw, 42px); letter-spacing: 1px;
+    color: var(--gold); text-shadow: 0 3px 0 #5a3a00, 0 0 18px rgba(255,204,77,.6); opacity: 0; }
+  #streak small { display: block; font-size: .42em; color: var(--bone); letter-spacing: 2px; }
+  #streak.on { animation: streak 1.5s ease-out forwards; }
+  @keyframes streak { 0% { opacity: 0; transform: scale(1.8) rotate(-6deg); } 12% { opacity: 1; transform: scale(1) rotate(-4deg); } 70% { opacity: 1; transform: rotate(-4deg); } 100% { opacity: 0; transform: translateY(-24px) rotate(-4deg); } }
+  #lowhp { position: fixed; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 170px 70px rgba(150, 0, 20, .8); opacity: 0; }
+  #lowhp.on { animation: beat 1s infinite; }
+  @keyframes beat { 0%, 100% { opacity: .3; } 14% { opacity: .9; } 28% { opacity: .4; } 42% { opacity: .75; } }
+  #goldlabel { display: inline-block; }
+  #goldlabel.bump { animation: bump .22s; }
+  @keyframes bump { 50% { transform: scale(1.35); color: #fff; } }
+
+  /* screen motion */
+  .panel { animation: pop .3s cubic-bezier(.2, 1.4, .4, 1) backwards; }
+  @keyframes pop { from { transform: scale(.86); opacity: 0; } }
+  .card { animation: cardIn .4s cubic-bezier(.2, 1.3, .4, 1) backwards; transition: transform .12s, border-color .12s; }
+  .card:nth-child(2) { animation-delay: .08s; } .card:nth-child(3) { animation-delay: .16s; }
+  .card:hover { transform: translateX(4px); }
+  @keyframes cardIn { from { transform: translateY(26px) scale(.9); opacity: 0; } }
+  .card .key { margin-left: auto; color: var(--muted); font-size: 12px; font-weight: 900; border: 1px solid var(--line); border-radius: 6px; padding: 2px 7px; }
+  #menu h1 { animation: glow 3s ease-in-out infinite alternate; }
+  @keyframes glow { to { text-shadow: 0 4px 0 #3a2a5e, 0 0 46px rgba(155,107,255,.95); } }
+  #playBtn { animation: nudge 1.6s ease-in-out infinite; }
+  @keyframes nudge { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+  #banner.on { animation: slam .35s cubic-bezier(.2, 1.5, .4, 1); }
+  @keyframes slam { from { transform: scale(1.6); opacity: 0; } }
+  .statgrid { display: grid; grid-template-columns: 1fr auto; gap: 4px 18px; font-size: 16px; min-width: 220px; }
+  .statgrid div:nth-child(even) { text-align: right; font-weight: 900; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="loading" class="screen">
+  <h1>BONE CRYPT<em>RISE AND SHATTER</em></h1>
+  <div id="loadbar"><div id="loadfill"></div></div>
+  <div class="hint" id="loadtext">Digging up the graveyard…</div>
+</div>
+
+<div id="hud" class="hidden">
+  <div id="topbar">
+    <div>
+      <div class="bar" id="hpbar"><i id="hpfill"></i><div class="bartext" id="hptext">100</div></div>
+      <div class="bar" id="ultbar"><i id="ultfill"></i></div>
+    </div>
+    <div id="wavebox"><b id="wavelabel">WAVE 1</b><span id="leftlabel"></span></div>
+    <div id="rightbox"><span class="gold" id="goldlabel">0</span>
+      <button id="pauseBtn" aria-label="Pause"><svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg></button></div>
+  </div>
+  <div id="bossbar" class="hidden"><div id="bossname">THE BONE KING</div><div class="bar"><i id="bossfill"></i></div></div>
+</div>
+<div id="banner"></div>
+<div id="vignette"></div>
+<div id="lowhp"></div>
+<div id="streak"></div>
+<div id="nums"></div>
+<div id="toast"></div>
+
+<div id="touch" class="hidden">
+  <div id="joy"><div id="joyknob"></div></div>
+  <div class="tbtn" id="bUlt">ULT</div>
+  <div class="tbtn" id="bDodge">ROLL</div>
+  <div class="tbtn" id="bAtk">ATTACK</div>
+</div>
+
+<div id="menu" class="screen hidden">
+  <h1>BONE CRYPT<em>RISE AND SHATTER</em></h1>
+  <div class="sub">The dead won't stay down. Cut skeletons into bone piles, then smash the piles before they rise again.</div>
+  <div id="heroes"></div>
+  <button class="btn gold" id="playBtn">PLAY</button>
+  <div class="row">
+    <button class="btn dark" id="musicBtn">MUSIC: ON</button>
+    <button class="btn dark" id="sfxBtn">SOUND: ON</button>
+  </div>
+  <div class="hint"><span class="gold" id="menuGold">0</span> gold · Best wave: <span id="menuBest">0</span></div>
+  <div class="hint" id="controlsHint">Move: WASD · Attack: J or left click · Roll: Space · Ultimate: K or right click</div>
+</div>
+
+<div id="upgrade" class="screen dim hidden">
+  <div class="panel">
+    <h2 id="upTitle">WAVE CLEARED</h2>
+    <div class="hint">Choose a blessing for the next wave</div>
+    <div id="cards"></div>
+  </div>
+</div>
+
+<div id="pause" class="screen dim hidden">
+  <div class="panel">
+    <h2>PAUSED</h2>
+    <div class="statgrid" id="pauseStats"></div>
+    <button class="btn" id="resumeBtn">RESUME</button>
+    <div class="row">
+      <button class="btn dark" id="pMusic">MUSIC</button>
+      <button class="btn dark" id="pSfx">SOUND</button>
+      <button class="btn dark" id="quitBtn">QUIT RUN</button>
+    </div>
+  </div>
+</div>
+
+<div id="results" class="screen dim hidden">
+  <div class="panel">
+    <h2 id="resTitle" style="color:var(--red)">YOU FELL</h2>
+    <div class="statgrid" id="resStats"></div>
+    <div class="gold" id="resGold" style="font-size:22px;font-weight:900"></div>
+    <button class="btn green" id="reviveBtn">REVIVE<span class="ad">AD</span></button>
+    <button class="btn small" id="doubleBtn">x2 GOLD<span class="ad">AD</span></button>
+    <div class="row">
+      <button class="btn gold" id="againBtn">PLAY AGAIN</button>
+      <button class="btn dark" id="menuBtn">MENU</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

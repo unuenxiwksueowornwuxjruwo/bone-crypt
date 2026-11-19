@@ -1,0 +1,19 @@
+Bone Crypt — audio credits. All sounds and music are public domain (CC0).
+
+MUSIC
+  music_battle.mp3  "Battle Theme A" by cynicmusic (CC0), OpenGameArt.org
+  music_boss.mp3    "Epic Boss Battle" by Juhani Junkala (CC0), OpenGameArt.org
+  Both are trimmed to a seamless loop with 0.5 s of padding at each end.
+
+SOUND EFFECTS
+  Kenney "RPG Audio" (CC0), kenney.nl
+    swing1, swing2 (knifeSlice, knifeSlice2), dodge (cloth1)
+  Kenney "Interface Sounds" (CC0), kenney.nl
+    click (select_002), nope (error_006)
+  "80 CC0 RPG SFX" by rubberduck (CC0), OpenGameArt.org
+    hit2, collapse, shatter, rise, resurrect, cast, boltHit, hurt, die, roar,
+    coin, gem, chain
+  "100 CC0 SFX" by rubberduck (CC0), OpenGameArt.org
+    hit1, hit3, gong, slam
+
+Converted to mono MP3 for the web.
